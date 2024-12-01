@@ -34,7 +34,7 @@ where
         }
         Ok(result)
     } else {
-        Err(file_lines.err().unwrap().to_string())
+        panic!("Failed to read file {}", file_lines.err().unwrap().to_string());
     }
 }
 
