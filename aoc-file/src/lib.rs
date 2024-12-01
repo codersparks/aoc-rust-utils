@@ -32,8 +32,10 @@ where
                 Err(p) => return Err(p),
             }
         }
+        Ok(result)
+    } else {
+        Err(file_lines.err().unwrap().to_string())
     }
-    Ok(result)
 }
 
 #[cfg(test)]
