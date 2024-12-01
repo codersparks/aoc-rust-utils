@@ -2,7 +2,7 @@ use crate::processors::line_processor_trait::LineProcessor;
 use std::fs::File;
 use std::io::{self, BufRead};
 use std::path::Path;
-mod processors;
+pub mod processors;
 
 // The output is wrapped in a Result to allow matching on errors.
 // Returns an Iterator to the Reader of the lines of the file.
