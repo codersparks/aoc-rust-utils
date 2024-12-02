@@ -16,7 +16,7 @@ name = "aoc-collections"
 version = "0.1.0"
 
 [[package]]
-name = "aoc-file"
+name = "aoc-generators"
 version = "0.1.0"
 dependencies = [
  "regex",
