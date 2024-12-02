@@ -1,6 +1,6 @@
 use crate::processors::line_processor_trait::LineProcessor;
 
-mod processors;
+pub mod processors;
 
 pub fn apply_processor_to_input<P>(
     input: &str,
