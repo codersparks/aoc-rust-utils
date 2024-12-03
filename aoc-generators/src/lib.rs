@@ -5,6 +5,7 @@ pub mod processors;
 pub fn apply_processor_to_input<P>(
     input: &str,
     processor: &P,
+    skip_empty_lines: bool,
 ) -> Result<Vec<P::Item>, P::ProcessorError>
 where
     P: LineProcessor,
@@ -14,6 +15,11 @@ where
     let mut result = Vec::new();
 
         for line in input.lines() {
+
+            if skip_empty_lines && line.is_empty() {
+                continue;
+            }
+
             let line_result = processor.process(line);
             match line_result {
                 Ok(l) => result.push(l),
@@ -37,7 +43,7 @@ mod tests {
         let line_processor = RepeatingLineProcessor {};
 
         let input = fs::read_to_string("resources/aoc23_1.test").unwrap();
-        if let Ok(lines) = apply_processor_to_input(&input, &line_processor) {
+        if let Ok(lines) = apply_processor_to_input(&input, &line_processor, true) {
             assert_eq!(lines.len(), 5);
 
             assert_eq!(lines[0], "1abc2");
@@ -53,7 +59,7 @@ mod tests {
         let mut processor = RegexLineProcessor::new(r"(\d+)", RegexLineProcessorMode::Split(true));
 
         let input = fs::read_to_string("resources/aoc23_1.test").unwrap();
-        if let Ok(lines) = apply_processor_to_input(&input, &processor) {
+        if let Ok(lines) = apply_processor_to_input(&input, &processor, true) {
             assert_eq!(lines.len(), 5);
             assert_eq!(lines[0], vec!["abc"]);
             assert_eq!(lines[1], vec!["pqr", "stu", "vwx"]);
@@ -67,7 +73,7 @@ mod tests {
         // Now we test without stripping the empty fields
         processor.update_mode(RegexLineProcessorMode::Split(false));
 
-        if let Ok(lines2) = apply_processor_to_input(&input, &processor) {
+        if let Ok(lines2) = apply_processor_to_input(&input, &processor, true) {
             assert_eq!(lines2.len(), 5);
             assert_eq!(lines2[0], vec!["", "abc", ""]);
             assert_eq!(lines2[1], vec!["pqr", "stu", "vwx"]);
@@ -84,7 +90,7 @@ mod tests {
         let processor = RegexLineProcessor::new(r"(\d+)", RegexLineProcessorMode::Matches);
 
         let input = fs::read_to_string("resources/aoc23_1.test").unwrap();
-        if let Ok(lines) = apply_processor_to_input(&input, &processor) {
+        if let Ok(lines) = apply_processor_to_input(&input, &processor, true) {
             assert_eq!(lines.len(), 5);
             assert_eq!(lines[0], vec!["1", "2"]);
             assert_eq!(lines[1], vec!["3", "8"]);
@@ -101,7 +107,7 @@ mod tests {
         let processor = RegexLineProcessor::new(r"(\d+)", RegexLineProcessorMode::FirstLast);
 
         let input = fs::read_to_string("resources/aoc23_1.test").unwrap();
-        if let Ok(lines) = apply_processor_to_input(&input, &processor) {
+        if let Ok(lines) = apply_processor_to_input(&input, &processor, true) {
             assert_eq!(lines.len(), 5);
             assert_eq!(lines[0], vec!["1", "2"]);
             assert_eq!(lines[1], vec!["3", "8"]);
