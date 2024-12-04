@@ -7,6 +7,7 @@
       <sourceFolder url="file://$MODULE_DIR$/aoc-collections/src" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/collections/src" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/aoc-generators/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/aoc-slices/src" isTestSource="false" />
       <excludeFolder url="file://$MODULE_DIR$/target" />
     </content>
     <orderEntry type="inheritedJdk" />
