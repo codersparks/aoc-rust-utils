@@ -1,5 +1,5 @@
 
-trait CountSlice {
+pub trait CountSlice {
     type Item : PartialEq;
     fn count_slice (self: &'_ Self, slice: &'_ [Self::Item]) -> u32;
 }
