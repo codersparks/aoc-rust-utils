@@ -7,6 +7,30 @@ pub fn count_elements<T>(collection: &Vec<T>) -> HashMap<&T, i32> where T: std::
     })
 }
 
+/// Defines operation if length of collection is divisible by 2 (i.e. cannot determine exact middle element)
+pub enum FindMiddleElementMode {
+    /// find_middle_element will return as Err
+    Error,
+    /// find_middle_element will return the value to the left of the middle point
+    Left,
+    /// find_middle_element will return the value to the right of the middle port
+    Right,
+}
+
+pub fn find_middle_element<T>(collection: &Vec<T>, mode: FindMiddleElementMode) -> Result<&T, &str>
+        where T: std::hash::Hash + std::cmp::Eq {
+    let midpoint = collection.len() / 2;
+    if collection.len() % 2 == 0 {
+        match mode {
+            FindMiddleElementMode::Error => Err("Collection has even number of elements and error mode used"),
+            FindMiddleElementMode::Left => Ok(&collection[midpoint - 1]),
+            FindMiddleElementMode::Right => Ok(&collection[midpoint]),
+        }
+    } else {
+        Ok(&collection[midpoint])
+    }
+}
+
 
 #[cfg(test)]
 mod tests {
@@ -42,5 +66,34 @@ mod tests {
         assert_eq!(*two_count, 2);
         let three_count = result.get(&"three").unwrap();
         assert_eq!(*three_count, 3);
+    }
+
+
+    #[test]
+    fn find_middle_element_odd_count() {
+        let input = vec![1, 2, 3, 4, 5];
+        let result = find_middle_element(&input, FindMiddleElementMode::Error);
+        assert_eq!(*result.unwrap(), 3);
+    }
+
+    #[test]
+    fn find_middle_element_even_count_error_mode() {
+        let input = vec![1, 2, 3, 4];
+        let result = find_middle_element(&input, FindMiddleElementMode::Error);
+        assert_eq!(result.unwrap_err(), "Collection has even number of elements and error mode used");
+    }
+
+    #[test]
+    fn find_middle_element_even_count_left_mode() {
+        let input = vec![1, 2, 3, 4];
+        let result = find_middle_element(&input, FindMiddleElementMode::Left);
+        assert_eq!(*result.unwrap(), 2);
+    }
+
+    #[test]
+    fn find_middle_element_even_count_right_mode() {
+        let input = vec![1, 2, 3, 4];
+        let result = find_middle_element(&input, FindMiddleElementMode::Right);
+        assert_eq!(*result.unwrap(), 3);
     }
 }
