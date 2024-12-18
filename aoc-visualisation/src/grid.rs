@@ -1,3 +1,4 @@
+use crate::traits::ratatui::RatatuiStylised;
 use ndarray::ArrayView2;
 use ratatui::buffer::Buffer;
 use ratatui::layout::{Layout, Rect};
@@ -12,7 +13,6 @@ struct GridCell {
 }
 
 impl GridCell {
-
     pub fn new(value: String) -> Self {
         Self {
             value,
@@ -21,18 +21,19 @@ impl GridCell {
     }
 
     pub fn with_style(value: String, style: Style) -> Self {
-        Self {
-            value,
-            style,
-        }
+        Self { value, style }
     }
 }
 
 impl Widget for GridCell {
-    fn render(self, area: Rect, buf: &mut Buffer)
-    {
-        let block = Block::default().border_type(BorderType::Rounded).borders(Borders::ALL);
-        Paragraph::new(self.value).style(self.style).block(block).render(area, buf);
+    fn render(self, area: Rect, buf: &mut Buffer) {
+        let block = Block::default()
+            .border_type(BorderType::Rounded)
+            .borders(Borders::ALL);
+        Paragraph::new(self.value)
+            .style(self.style)
+            .block(block)
+            .render(area, buf);
     }
 }
 
@@ -55,24 +56,31 @@ impl GridVisualiser {
         self.style_map.insert(name, style);
     }
 
-    pub fn draw<T>(&self, grid: ArrayView2<T>, area: Rect, buf: &mut Buffer) where T: Display {
-
+    pub fn draw<T>(&self, grid: ArrayView2<T>, area: Rect, buf: &mut Buffer)
+    where
+        T: RatatuiStylised,
+        T: Display,
+    {
         let row_constraint = Self::create_constraints(grid.nrows(), self.cell_row_size);
 
-        let rows = Layout::default().direction(ratatui::layout::Direction::Vertical)
-            .constraints(row_constraint).split(area);
+        let rows = Layout::default()
+            .direction(ratatui::layout::Direction::Vertical)
+            .constraints(row_constraint)
+            .split(area);
 
         for (row_idx, grid_row) in rows.iter().enumerate() {
             let col_constraint = Self::create_constraints(grid.ncols(), self.cell_col_size);
-            let cols = Layout::default().direction(ratatui::layout::Direction::Horizontal)
-                .constraints(col_constraint).split(*grid_row);
+            let cols = Layout::default()
+                .direction(ratatui::layout::Direction::Horizontal)
+                .constraints(col_constraint)
+                .split(*grid_row);
 
             for (col_idx, grid_col) in cols.iter().enumerate() {
-
                 let value = grid[[row_idx, col_idx]].to_string();
 
                 let grid_cell;
-                if let Some(s) = self.style_map.get(&value) {
+
+                if let Some(s) = grid[[row_idx, col_idx]].get_style() {
                     grid_cell = GridCell::with_style(value, s.clone());
                 } else {
                     grid_cell = GridCell::new(value);
@@ -80,11 +88,8 @@ impl GridVisualiser {
 
                 grid_cell.render(*grid_col, buf);
             }
-
-
         }
     }
-
 
     fn create_constraints(n: usize, cell_size: usize) -> Vec<ratatui::layout::Constraint> {
         (0..n)
@@ -92,7 +97,6 @@ impl GridVisualiser {
             .collect()
     }
 }
-
 
 #[cfg(test)]
 mod tests {
@@ -105,7 +109,6 @@ mod tests {
 
         #[test]
         fn test_render() {
-
             let value = "#";
 
             let mut buffer = Buffer::empty(Rect::new(0, 0, 3, 3));
@@ -125,7 +128,6 @@ mod tests {
 
         #[test]
         fn test_render_with_style_default() {
-
             let mut buffer = Buffer::empty(Rect::new(0, 0, 3, 3));
 
             let grid_cell = GridCell::with_style("#".to_string(), Style::default());
@@ -143,10 +145,12 @@ mod tests {
 
         #[test]
         fn test_render_with_style_red_bg() {
-
             let mut buffer = Buffer::empty(Rect::new(0, 0, 3, 3));
 
-            let grid_cell = GridCell::with_style("#".to_string(), Style::default().bg(ratatui::style::Color::Red));
+            let grid_cell = GridCell::with_style(
+                "#".to_string(),
+                Style::default().bg(ratatui::style::Color::Red),
+            );
             grid_cell.render(buffer.area, &mut buffer);
 
             #[rustfmt::skip]
@@ -156,24 +160,54 @@ mod tests {
                 "╰─╯",
             ]);
 
-            expected.set_style(expected.area, Style::default().bg(ratatui::style::Color::Red));
+            expected.set_style(
+                expected.area,
+                Style::default().bg(ratatui::style::Color::Red),
+            );
 
             assert_eq!(buffer, expected);
         }
     }
 
     mod grid {
+        use std::fmt::{Formatter};
+        use ratatui::style::Color;
         use super::*;
 
+        struct TestGridItem {
+            value: char,
+        }
+
+        impl TestGridItem {
+            fn new(c:char) -> Self {
+                Self {
+                    value: c
+                }
+            }
+        }
+
+        impl Display for TestGridItem {
+            fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+                write!(f, "{}", self.value)
+            }
+        }
+
+        impl RatatuiStylised for TestGridItem {
+            fn get_style(&self) -> Option<Style> {
+                if self.value == '#' {
+                    Some(Style::default().bg(Color::Red))
+                } else {
+                    None
+                }
+            }
+        }
         #[test]
         fn test_render() {
             let grid = array![
-                ['.', '.', '#', '.' ],
-                ['.', '.', '#', '.' ],
-                ['.', '#', '.', 'x' ],
-                ['.', '.', '.', 'v' ],
-
-
+                [TestGridItem::new('.'), TestGridItem::new('.'), TestGridItem::new('A'), TestGridItem::new('.')],
+                [TestGridItem::new('.'), TestGridItem::new('.'), TestGridItem::new('A'), TestGridItem::new('.')],
+                [TestGridItem::new('.'), TestGridItem::new('A'), TestGridItem::new('.'), TestGridItem::new('x')],
+                [TestGridItem::new('.'), TestGridItem::new('.'), TestGridItem::new('.'), TestGridItem::new('v')],
             ];
 
             let grid_view = grid.slice(s![1..4, 2..4]);
@@ -187,7 +221,7 @@ mod tests {
             #[rustfmt::skip]
             let mut expected = Buffer::with_lines([
                 "╭─╮╭─╮",
-                "│#││.│",
+                "│A││.│",
                 "╰─╯╰─╯",
                 "╭─╮╭─╮",
                 "│.││x│",
@@ -197,21 +231,21 @@ mod tests {
                 "╰─╯╰─╯",
             ]);
 
-
             expected.set_style(Rect::new(3, 0, 6, 6), Style::default());
             assert_eq!(buffer, expected);
         }
 
         #[test]
         fn test_render_with_style_matching() {
-            let grid = array![
-                ['#'],
-            ];
+            let grid = array![[TestGridItem::new('#')],];
 
             let grid_view = grid.slice(s![.., ..]);
 
             let mut visualiser = GridVisualiser::new(3, 3);
-            visualiser.add_style("#".to_string(), Style::default().bg(ratatui::style::Color::Red));
+            visualiser.add_style(
+                "#".to_string(),
+                Style::default().bg(ratatui::style::Color::Red),
+            );
 
             let mut buffer = Buffer::empty(Rect::new(0, 0, 3, 3));
 
@@ -224,33 +258,32 @@ mod tests {
                 "╰─╯",
             ]);
 
-
             expected.set_style(buffer.area, Style::default().bg(ratatui::style::Color::Red));
             assert_eq!(buffer, expected);
         }
 
         #[test]
         fn test_render_with_style_not_matching() {
-            let grid = array![
-                ['.'],
-            ];
+            let grid = array![[TestGridItem::new('.')],];
 
             let grid_view = grid.slice(s![.., ..]);
 
             let mut visualiser = GridVisualiser::new(3, 3);
-            visualiser.add_style("#".to_string(), Style::default().bg(ratatui::style::Color::Red));
+            visualiser.add_style(
+                "#".to_string(),
+                Style::default().bg(ratatui::style::Color::Red),
+            );
 
             let mut buffer = Buffer::empty(Rect::new(0, 0, 3, 3));
 
             visualiser.draw(grid_view, buffer.area, &mut buffer);
 
             #[rustfmt::skip]
-            let mut expected = Buffer::with_lines([
+            let expected = Buffer::with_lines([
                 "╭─╮",
                 "│.│",
                 "╰─╯",
             ]);
-
 
             assert_eq!(buffer, expected);
         }
