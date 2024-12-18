@@ -37,9 +37,10 @@ impl Widget for GridCell {
         };
         let block = Block::default()
             .border_set(border_set)
+            .style(self.style)
             .borders(Borders::LEFT | Borders::TOP);
         Paragraph::new(self.value)
-            .style(self.style)
+
             .block(block)
             .centered()
             .render(area, buf);
