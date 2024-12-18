@@ -31,6 +31,7 @@ impl Widget for GridCell {
 
         let border_set = symbols::border::Set {
             top_left: symbols::line::NORMAL.horizontal_down,
+            bottom_right: symbols::line::NORMAL.horizontal_up,
             ..symbols::border::PLAIN
         };
         let block = Block::default()
