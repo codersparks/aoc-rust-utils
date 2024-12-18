@@ -6,6 +6,7 @@ use ratatui::style::Style;
 use ratatui::widgets::{Block, BorderType, Borders, Paragraph, Widget};
 use std::collections::HashMap;
 use std::fmt::Display;
+use ratatui::symbols;
 
 struct GridCell {
     value: String,
@@ -27,9 +28,14 @@ impl GridCell {
 
 impl Widget for GridCell {
     fn render(self, area: Rect, buf: &mut Buffer) {
+
+        let border_set = symbols::border::Set {
+            top_left: symbols::line::NORMAL.horizontal_down,
+            ..symbols::border::PLAIN
+        };
         let block = Block::default()
-            .border_type(BorderType::Rounded)
-            .borders(Borders::ALL);
+            .border_set(border_set)
+            .borders(Borders::LEFT | Borders::TOP);
         Paragraph::new(self.value)
             .style(self.style)
             .block(block)
