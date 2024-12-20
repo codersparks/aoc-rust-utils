@@ -30,9 +30,7 @@ impl Widget for GridCell {
     fn render(self, area: Rect, buf: &mut Buffer) {
 
         let border_set = symbols::border::Set {
-            top_left: symbols::line::NORMAL.vertical_right,
-            top_right: symbols::line::NORMAL.vertical_left,
-            bottom_right: symbols::line::NORMAL.horizontal_up,
+            top_left: symbols::line::CROSS,
             ..symbols::border::PLAIN
         };
         let block = Block::default()
@@ -121,7 +119,7 @@ mod tests {
         fn test_render() {
             let value = "#";
 
-            let mut buffer = Buffer::empty(Rect::new(0, 0, 3, 3));
+            let mut buffer = Buffer::empty(Rect::new(0, 0, 4, 3));
 
             let grid_cell = GridCell::new(value.to_string());
             grid_cell.render(buffer.area, &mut buffer);
