@@ -81,8 +81,13 @@ impl GridVisualiser {
 
     fn create_constraints(n: usize, cell_size: usize) -> Vec<ratatui::layout::Constraint> {
         (0..n)
-            .map(|_|
-                ratatui::layout::Constraint::Length(cell_size as u16))
+            .enumerate()
+            .map(|(idx, _)| {
+                if idx == n-1 {
+                    return ratatui::layout::Constraint::Length(cell_size as u16 + 1)
+                }
+                ratatui::layout::Constraint::Length(cell_size as u16)
+            })
             .collect()
     }
 }
