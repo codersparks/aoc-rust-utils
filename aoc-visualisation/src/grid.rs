@@ -83,9 +83,9 @@ impl GridVisualiser {
         (0..n)
             .enumerate().map(|(idx, _)| {
                 if idx == n {
-                    return ratatui::layout::Constraint::Length(cell_size as u16 + 1)
+                    return ratatui::layout::Constraint::Length(cell_size as u16)
                 }
-                ratatui::layout::Constraint::Length(cell_size as u16)
+                ratatui::layout::Constraint::Length(cell_size as u16 - 1)
         }).collect()
     }
 }
