@@ -42,39 +42,25 @@ impl GridCell {
     fn generate_border_set(&self) -> symbols::border::Set {
         let mut border_set = symbols::border::PLAIN;
 
-        if self.edge.contains(GridCellEdge::TOP) {
-            if self.edge.contains(GridCellEdge::LEFT) {
-                border_set.top_left = symbols::line::TOP_LEFT;
-            } else {
-                border_set.top_left = symbols::line::HORIZONTAL_DOWN;
-            }
+        border_set.top_left = match (self.edge.contains(GridCellEdge::TOP), self.edge.contains(GridCellEdge::LEFT)) {
+            (true, true) => symbols::line::TOP_LEFT,
+            (true, false) => symbols::line::HORIZONTAL_DOWN,
+            (false, true) => symbols::line::VERTICAL_RIGHT,
+            (false, false) => symbols::line::CROSS,
+        };
 
-            if self.edge.contains(GridCellEdge::RIGHT) {
-                border_set.top_right = symbols::line::TOP_RIGHT;
-            } else {
-                border_set.top_right = symbols::line::VERTICAL_LEFT;
-            }
-        } else if self.edge.contains(GridCellEdge::BOTTOM) {
-            if self.edge.contains(GridCellEdge::LEFT) {
-                border_set.top_left = symbols::line::VERTICAL_RIGHT;
-                border_set.bottom_left = symbols::line::BOTTOM_LEFT;
-            } else {
-                if self.edge.contains(GridCellEdge::RIGHT) {
-                    border_set.top_right = symbols::line::VERTICAL_LEFT
-                }
-                border_set.top_left = symbols::line::CROSS;
-                border_set.bottom_left = symbols::line::HORIZONTAL_UP;
-            }
-        } else {
-            if self.edge.contains(GridCellEdge::LEFT) {
-                border_set.top_left = symbols::line::VERTICAL_RIGHT;
-            } else {
-                if self.edge.contains(GridCellEdge::RIGHT) {
-                    border_set.top_right = symbols::line::VERTICAL_LEFT;
-                }
-                border_set.top_left = symbols::line::CROSS;
-            }
-        }
+        border_set.top_right = match (self.edge.contains(GridCellEdge::TOP), self.edge.contains(GridCellEdge::RIGHT)) {
+            (true, true) => symbols::line::TOP_RIGHT,
+            (false, true) => symbols::line::VERTICAL_LEFT,
+            _ => border_set.top_right,
+        };
+
+        border_set.bottom_left = match (self.edge.contains(GridCellEdge::BOTTOM), self.edge.contains(GridCellEdge::LEFT)) {
+            (true, true) => symbols::line::BOTTOM_LEFT,
+            (true, false) => symbols::line::HORIZONTAL_UP,
+            _ => border_set.bottom_left,
+        };
+
         border_set
     }
 }
