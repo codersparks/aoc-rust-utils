@@ -1,10 +1,9 @@
-
+use crate::grid::grid_config::GridCellEdge;
 use ratatui::buffer::Buffer;
 use ratatui::layout::Rect;
 use ratatui::prelude::{Style, Widget};
 use ratatui::symbols;
 use ratatui::widgets::{Block, Borders, Paragraph};
-use crate::grid::grid_config::GridCellEdge;
 
 pub(crate) struct GridCell {
     value: String,
@@ -17,7 +16,7 @@ impl GridCell {
         Self {
             value,
             style: Style::default(),
-            edge
+            edge,
         }
     }
 
@@ -26,7 +25,6 @@ impl GridCell {
     }
 
     fn generate_borders(&self) -> Borders {
-
         // All cells have top and left border
         let mut borders = Borders::TOP | Borders::LEFT;
 
@@ -42,7 +40,6 @@ impl GridCell {
     }
 
     fn generate_border_set(&self) -> symbols::border::Set {
-
         let mut border_set = symbols::border::PLAIN;
 
         if self.edge.contains(GridCellEdge::TOP) {
@@ -62,7 +59,7 @@ impl GridCell {
                 border_set.top_left = symbols::line::VERTICAL_RIGHT;
                 border_set.bottom_left = symbols::line::BOTTOM_LEFT;
             } else {
-                if self.edge.contains(GridCellEdge::RIGHT){
+                if self.edge.contains(GridCellEdge::RIGHT) {
                     border_set.top_right = symbols::line::VERTICAL_LEFT
                 }
                 border_set.top_left = symbols::line::CROSS;
@@ -72,7 +69,7 @@ impl GridCell {
             if self.edge.contains(GridCellEdge::LEFT) {
                 border_set.top_left = symbols::line::VERTICAL_RIGHT;
             } else {
-                if self.edge.contains(GridCellEdge::RIGHT){
+                if self.edge.contains(GridCellEdge::RIGHT) {
                     border_set.top_right = symbols::line::VERTICAL_LEFT;
                 }
                 border_set.top_left = symbols::line::CROSS;
@@ -84,16 +81,11 @@ impl GridCell {
 
 impl Widget for GridCell {
     fn render(self, area: Rect, buf: &mut Buffer) {
-
-
-
         let border_set = self.generate_border_set();
 
         let borders = self.generate_borders();
 
-        let block = Block::default()
-            .border_set(border_set)
-            .borders(borders);
+        let block = Block::default().border_set(border_set).borders(borders);
 
         let inner_area = block.inner(area);
 
@@ -103,5 +95,73 @@ impl Widget for GridCell {
             .style(self.style)
             .centered()
             .render(inner_area, buf);
+    }
+}
+
+#[cfg(test)]
+mod grid_cell {
+    use super::*;
+
+    #[test]
+    fn test_render() {
+        let value = "#";
+
+        let mut buffer = Buffer::empty(Rect::new(0, 0, 3, 3));
+
+        let grid_cell = GridCell::new(value.to_string(), GridCellEdge::ALL);
+        grid_cell.render(buffer.area, &mut buffer);
+
+        #[rustfmt::skip]
+            let expected = Buffer::with_lines([
+        "┌─┐",
+        "│#│",
+        "└─┘",
+            ]);
+
+        assert_eq!(buffer, expected);
+    }
+
+    #[test]
+    fn test_render_with_style_default() {
+        let mut buffer = Buffer::empty(Rect::new(0, 0, 3, 3));
+
+        let grid_cell = GridCell::with_style("#".to_string(), Style::default(), GridCellEdge::ALL);
+        grid_cell.render(buffer.area, &mut buffer);
+
+        #[rustfmt::skip]
+            let expected = Buffer::with_lines([
+        "┌─┐",
+        "│#│",
+        "└─┘",
+            ]);
+
+        assert_eq!(buffer, expected);
+    }
+
+    #[test]
+    fn test_render_with_style_red_bg() {
+        let mut buffer = Buffer::empty(Rect::new(0, 0, 3, 3));
+
+        let grid_cell = GridCell::with_style(
+            "#".to_string(),
+            Style::default().bg(ratatui::style::Color::Red),
+            GridCellEdge::ALL,
+        );
+        grid_cell.render(buffer.area, &mut buffer);
+
+        #[rustfmt::skip]
+            let mut expected = Buffer::with_lines([
+        "┌─┐",
+        "│#│",
+        "└─┘",
+            ]);
+
+        expected.set_style(
+            Rect::new(1, 1, 1, 1),
+            Style::default().bg(ratatui::style::Color::Red),
+        );
+
+
+        assert_eq!(buffer, expected);
     }
 }

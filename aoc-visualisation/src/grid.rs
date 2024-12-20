@@ -91,71 +91,7 @@ mod tests {
     use super::*;
     use ndarray::{array, s};
 
-    mod grid_cell {
-        use super::*;
 
-        #[test]
-        fn test_render() {
-            let value = "#";
-
-            let mut buffer = Buffer::empty(Rect::new(0, 0, 4, 3));
-
-            let grid_cell = GridCell::new(value.to_string(), GridCellEdge::ALL);
-            grid_cell.render(buffer.area, &mut buffer);
-
-            #[rustfmt::skip]
-            let expected = Buffer::with_lines([
-                "╭─╮",
-                "│#│",
-                "╰─╯",
-            ]);
-
-            assert_eq!(buffer, expected);
-        }
-
-        #[test]
-        fn test_render_with_style_default() {
-            let mut buffer = Buffer::empty(Rect::new(0, 0, 3, 3));
-
-            let grid_cell = GridCell::with_style("#".to_string(), Style::default(), GridCellEdge::ALL);
-            grid_cell.render(buffer.area, &mut buffer);
-
-            #[rustfmt::skip]
-            let expected = Buffer::with_lines([
-                "╭─╮",
-                "│#│",
-                "╰─╯",
-            ]);
-
-            assert_eq!(buffer, expected);
-        }
-
-        #[test]
-        fn test_render_with_style_red_bg() {
-            let mut buffer = Buffer::empty(Rect::new(0, 0, 3, 3));
-
-            let grid_cell = GridCell::with_style(
-                "#".to_string(),
-                Style::default().bg(ratatui::style::Color::Red),
-                GridCellEdge::ALL
-            );
-            grid_cell.render(buffer.area, &mut buffer);
-
-            #[rustfmt::skip]
-            let mut expected = Buffer::with_lines([
-                "╭─╮",
-                "│#│",
-                "╰─╯",
-            ]);
-
-            expected.set_style(
-                expected.area,
-                Style::default().bg(ratatui::style::Color::Red),
-            );
-
-            assert_eq!(buffer, expected);
-        }
-    }
 
     mod grid {
         use super::*;
