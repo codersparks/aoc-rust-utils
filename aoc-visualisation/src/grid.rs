@@ -1,52 +1,14 @@
+mod grid_cell;
+
+use crate::grid::grid_cell::GridCell;
 use crate::traits::ratatui::RatatuiStylised;
 use ndarray::ArrayView2;
 use ratatui::buffer::Buffer;
 use ratatui::layout::{Layout, Rect};
 use ratatui::style::Style;
-use ratatui::widgets::{Block, BorderType, Borders, Paragraph, Widget};
+use ratatui::widgets::Widget;
 use std::collections::HashMap;
 use std::fmt::Display;
-use ratatui::symbols;
-
-struct GridCell {
-    value: String,
-    style: Style,
-}
-
-impl GridCell {
-    pub fn new(value: String) -> Self {
-        Self {
-            value,
-            style: Style::default(),
-        }
-    }
-
-    pub fn with_style(value: String, style: Style) -> Self {
-        Self { value, style }
-    }
-}
-
-impl Widget for GridCell {
-    fn render(self, area: Rect, buf: &mut Buffer) {
-
-        let border_set = symbols::border::Set {
-            top_left: symbols::line::CROSS,
-            ..symbols::border::PLAIN
-        };
-        let block = Block::default()
-            .border_set(border_set)
-            .borders(Borders::LEFT | Borders::TOP);
-
-        let inner_area = block.inner(area);
-
-        block.render(area, buf);
-
-        Paragraph::new(self.value)
-            .style(self.style)
-            .centered()
-            .render(inner_area, buf);
-    }
-}
 
 pub struct GridVisualiser {
     style_map: HashMap<String, Style>,
@@ -115,7 +77,6 @@ mod tests {
     use ndarray::{array, s};
 
     mod grid_cell {
-
         use super::*;
 
         #[test]
@@ -181,9 +142,9 @@ mod tests {
     }
 
     mod grid {
-        use std::fmt::{Formatter};
-        use ratatui::style::Color;
         use super::*;
+        use ratatui::style::Color;
+        use std::fmt::Formatter;
 
         struct TestGridItem {
             value: char,
