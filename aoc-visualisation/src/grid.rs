@@ -1,4 +1,5 @@
 mod grid_cell;
+mod grid_config;
 
 use crate::grid::grid_cell::GridCell;
 use crate::traits::ratatui::RatatuiStylised;
@@ -9,6 +10,7 @@ use ratatui::style::Style;
 use ratatui::widgets::Widget;
 use std::collections::HashMap;
 use std::fmt::Display;
+use crate::grid::grid_config::GridCellEdge;
 
 pub struct GridVisualiser {
     style_map: HashMap<String, Style>,
@@ -53,10 +55,23 @@ impl GridVisualiser {
 
                 let grid_cell;
 
-                if let Some(s) = grid[[row_idx, col_idx]].get_style() {
-                    grid_cell = GridCell::with_style(value, s.clone());
+                let mut edge: GridCellEdge = GridCellEdge::empty();
+                if row_idx == 0 {
+                    edge |= GridCellEdge::TOP;
+                } else if row_idx == grid.nrows() - 1 {
+                    edge |= GridCellEdge::BOTTOM;
+                }
+
+                if col_idx == 0 {
+                    edge |= GridCellEdge::LEFT;
                 } else {
-                    grid_cell = GridCell::new(value);
+                    edge |= GridCellEdge::RIGHT;
+                }
+
+                if let Some(s) = grid[[row_idx, col_idx]].get_style() {
+                    grid_cell = GridCell::with_style(value, s.clone(), edge);
+                } else {
+                    grid_cell = GridCell::new(value, edge);
                 }
 
                 grid_cell.render(*grid_col, buf);
@@ -85,7 +100,7 @@ mod tests {
 
             let mut buffer = Buffer::empty(Rect::new(0, 0, 4, 3));
 
-            let grid_cell = GridCell::new(value.to_string());
+            let grid_cell = GridCell::new(value.to_string(), GridCellEdge::ALL);
             grid_cell.render(buffer.area, &mut buffer);
 
             #[rustfmt::skip]
@@ -102,7 +117,7 @@ mod tests {
         fn test_render_with_style_default() {
             let mut buffer = Buffer::empty(Rect::new(0, 0, 3, 3));
 
-            let grid_cell = GridCell::with_style("#".to_string(), Style::default());
+            let grid_cell = GridCell::with_style("#".to_string(), Style::default(), GridCellEdge::ALL);
             grid_cell.render(buffer.area, &mut buffer);
 
             #[rustfmt::skip]
@@ -122,6 +137,7 @@ mod tests {
             let grid_cell = GridCell::with_style(
                 "#".to_string(),
                 Style::default().bg(ratatui::style::Color::Red),
+                GridCellEdge::ALL
             );
             grid_cell.render(buffer.area, &mut buffer);
 
