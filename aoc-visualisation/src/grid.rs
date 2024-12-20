@@ -2,6 +2,7 @@ mod grid_cell;
 mod grid_config;
 
 use crate::grid::grid_cell::GridCell;
+use crate::grid::grid_config::GridCellEdge;
 use crate::traits::ratatui::RatatuiStylised;
 use ndarray::ArrayView2;
 use ratatui::buffer::Buffer;
@@ -10,7 +11,6 @@ use ratatui::style::Style;
 use ratatui::widgets::Widget;
 use std::collections::HashMap;
 use std::fmt::Display;
-use crate::grid::grid_config::GridCellEdge;
 
 pub struct GridVisualiser {
     style_map: HashMap<String, Style>,
@@ -64,7 +64,7 @@ impl GridVisualiser {
 
                 if col_idx == 0 {
                     edge |= GridCellEdge::LEFT;
-                } else {
+                } else if col_idx == grid.ncols() - 1 {
                     edge |= GridCellEdge::RIGHT;
                 }
 
@@ -91,125 +91,223 @@ mod tests {
     use super::*;
     use ndarray::{array, s};
 
+    use ratatui::style::Color;
+    use std::fmt::Formatter;
 
+    struct TestGridItem {
+        value: char,
+    }
 
-    mod grid {
-        use super::*;
-        use ratatui::style::Color;
-        use std::fmt::Formatter;
-
-        struct TestGridItem {
-            value: char,
+    impl TestGridItem {
+        fn new(c: char) -> Self {
+            Self { value: c }
         }
+    }
 
-        impl TestGridItem {
-            fn new(c:char) -> Self {
-                Self {
-                    value: c
-                }
+    impl Display for TestGridItem {
+        fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+            write!(f, "{}", self.value)
+        }
+    }
+
+    impl RatatuiStylised for TestGridItem {
+        fn get_style(&self) -> Option<Style> {
+            if self.value == '#' {
+                Some(Style::default().bg(Color::Red))
+            } else {
+                None
             }
         }
+    }
+    #[test]
+    fn test_render() {
+        let grid = array![
+            [
+                TestGridItem::new('.'),
+                TestGridItem::new('.'),
+                TestGridItem::new('A'),
+                TestGridItem::new('.')
+            ],
+            [
+                TestGridItem::new('.'),
+                TestGridItem::new('.'),
+                TestGridItem::new('A'),
+                TestGridItem::new('.')
+            ],
+            [
+                TestGridItem::new('.'),
+                TestGridItem::new('A'),
+                TestGridItem::new('.'),
+                TestGridItem::new('x')
+            ],
+            [
+                TestGridItem::new('.'),
+                TestGridItem::new('.'),
+                TestGridItem::new('.'),
+                TestGridItem::new('v')
+            ],
+        ];
 
-        impl Display for TestGridItem {
-            fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-                write!(f, "{}", self.value)
-            }
-        }
+        let grid_view = grid.slice(s![.., ..]);
 
-        impl RatatuiStylised for TestGridItem {
-            fn get_style(&self) -> Option<Style> {
-                if self.value == '#' {
-                    Some(Style::default().bg(Color::Red))
-                } else {
-                    None
-                }
-            }
-        }
-        #[test]
-        fn test_render() {
-            let grid = array![
-                [TestGridItem::new('.'), TestGridItem::new('.'), TestGridItem::new('A'), TestGridItem::new('.')],
-                [TestGridItem::new('.'), TestGridItem::new('.'), TestGridItem::new('A'), TestGridItem::new('.')],
-                [TestGridItem::new('.'), TestGridItem::new('A'), TestGridItem::new('.'), TestGridItem::new('x')],
-                [TestGridItem::new('.'), TestGridItem::new('.'), TestGridItem::new('.'), TestGridItem::new('v')],
-            ];
+        let visualiser = GridVisualiser::new(3, 3);
 
-            let grid_view = grid.slice(s![1..4, 2..4]);
+        let mut buffer = Buffer::empty(Rect::new(0, 0, 12, 12));
 
-            let visualiser = GridVisualiser::new(3, 3);
+        visualiser.draw(grid_view, buffer.area, &mut buffer);
 
-            let mut buffer = Buffer::empty(Rect::new(0, 0, 6, 9));
-
-            visualiser.draw(grid_view, buffer.area, &mut buffer);
-
-            #[rustfmt::skip]
+        #[rustfmt::skip]
             let mut expected = Buffer::with_lines([
-                "╭─╮╭─╮",
-                "│A││.│",
-                "╰─╯╰─╯",
-                "╭─╮╭─╮",
-                "│.││x│",
-                "╰─╯╰─╯",
-                "╭─╮╭─╮",
-                "│.││v│",
-                "╰─╯╰─╯",
+        "┌──┬──┬──┬─┐",
+        "│ .│ .│ A│.│",
+        "│  │  │  │ │",
+        "├──┼──┼──┼─┤",
+        "│ .│ .│ A│.│",
+        "│  │  │  │ │",
+        "├──┼──┼──┼─┤",
+        "│ .│ A│ .│x│",
+        "│  │  │  │ │",
+        "├──┼──┼──┼─┤",
+        "│ .│ .│ .│v│",
+        "└──┴──┴──┴─┘",
             ]);
 
-            expected.set_style(Rect::new(3, 0, 6, 6), Style::default());
-            assert_eq!(buffer, expected);
-        }
+        expected.set_style(Rect::new(3, 0, 6, 6), Style::default());
+        assert_eq!(buffer, expected);
+    }
 
-        #[test]
-        fn test_render_with_style_matching() {
-            let grid = array![[TestGridItem::new('#')],];
+    #[test]
+    fn test_render_limited() {
+        let grid = array![
+            [
+                TestGridItem::new('.'),
+                TestGridItem::new('.'),
+                TestGridItem::new('A'),
+                TestGridItem::new('.')
+            ],
+            [
+                TestGridItem::new('.'),
+                TestGridItem::new('.'),
+                TestGridItem::new('A'),
+                TestGridItem::new('.')
+            ],
+            [
+                TestGridItem::new('.'),
+                TestGridItem::new('A'),
+                TestGridItem::new('.'),
+                TestGridItem::new('x')
+            ],
+            [
+                TestGridItem::new('.'),
+                TestGridItem::new('.'),
+                TestGridItem::new('.'),
+                TestGridItem::new('v')
+            ],
+        ];
 
-            let grid_view = grid.slice(s![.., ..]);
+        let grid_view = grid.slice(s![1..4, 2..4]);
 
-            let mut visualiser = GridVisualiser::new(3, 3);
-            visualiser.add_style(
-                "#".to_string(),
-                Style::default().bg(ratatui::style::Color::Red),
-            );
+        let visualiser = GridVisualiser::new(3, 3);
 
-            let mut buffer = Buffer::empty(Rect::new(0, 0, 3, 3));
+        let mut buffer = Buffer::empty(Rect::new(0, 0, 6, 9));
 
-            visualiser.draw(grid_view, buffer.area, &mut buffer);
+        visualiser.draw(grid_view, buffer.area, &mut buffer);
 
-            #[rustfmt::skip]
+        #[rustfmt::skip]
             let mut expected = Buffer::with_lines([
-                "╭─╮",
-                "│#│",
-                "╰─╯",
+        "┌──┬─┐",
+        "│ A│.│",
+        "│  │ │",
+        "├──┼─┤",
+        "│ .│x│",
+        "│  │ │",
+        "├──┼─┤",
+        "│ .│v│",
+        "└──┴─┘",
             ]);
 
-            expected.set_style(buffer.area, Style::default().bg(ratatui::style::Color::Red));
-            assert_eq!(buffer, expected);
-        }
+        expected.set_style(Rect::new(3, 0, 6, 6), Style::default());
+        assert_eq!(buffer, expected);
+    }
 
-        #[test]
-        fn test_render_with_style_not_matching() {
-            let grid = array![[TestGridItem::new('.')],];
+    #[test]
+    fn test_render_with_style_matching() {
+        let grid = array![
+            [
+                TestGridItem::new('.'),
+                TestGridItem::new('.'),
+                TestGridItem::new('A'),
+                TestGridItem::new('.')
+            ],
+            [
+                TestGridItem::new('.'),
+                TestGridItem::new('#'),
+                TestGridItem::new('A'),
+                TestGridItem::new('.')
+            ],
+            [
+                TestGridItem::new('.'),
+                TestGridItem::new('A'),
+                TestGridItem::new('.'),
+                TestGridItem::new('x')
+            ],
+            [
+                TestGridItem::new('.'),
+                TestGridItem::new('.'),
+                TestGridItem::new('.'),
+                TestGridItem::new('v')
+            ],
+        ];
 
-            let grid_view = grid.slice(s![.., ..]);
+        let grid_view = grid.slice(s![..2, ..2]);
 
-            let mut visualiser = GridVisualiser::new(3, 3);
-            visualiser.add_style(
-                "#".to_string(),
-                Style::default().bg(ratatui::style::Color::Red),
-            );
+        let mut visualiser = GridVisualiser::new(3, 3);
+        visualiser.add_style(
+            "#".to_string(),
+            Style::default().bg(ratatui::style::Color::Red),
+        );
 
-            let mut buffer = Buffer::empty(Rect::new(0, 0, 3, 3));
+        let mut buffer = Buffer::empty(Rect::new(0, 0, 6, 6));
 
-            visualiser.draw(grid_view, buffer.area, &mut buffer);
+        visualiser.draw(grid_view, buffer.area, &mut buffer);
 
-            #[rustfmt::skip]
+        #[rustfmt::skip]
+            let mut expected = Buffer::with_lines([
+        "┌──┬─┐",
+        "│ .│.│",
+        "│  │ │",
+        "├──┼─┤",
+        "│ .│#│",
+        "└──┴─┘",
+            ]);
+
+        expected.set_style(Rect::new(4,4,1,1), Style::default().bg(ratatui::style::Color::Red));
+        assert_eq!(buffer, expected);
+    }
+
+    #[test]
+    fn test_render_with_style_not_matching() {
+        let grid = array![[TestGridItem::new('.')],];
+
+        let grid_view = grid.slice(s![.., ..]);
+
+        let mut visualiser = GridVisualiser::new(3, 3);
+        visualiser.add_style(
+            "#".to_string(),
+            Style::default().bg(ratatui::style::Color::Red),
+        );
+
+        let mut buffer = Buffer::empty(Rect::new(0, 0, 3, 3));
+
+        visualiser.draw(grid_view, buffer.area, &mut buffer);
+
+        #[rustfmt::skip]
             let expected = Buffer::with_lines([
-                "╭─╮",
-                "│.│",
-                "╰─╯",
+        "┌──",
+        "│ .",
+        "│  ",
             ]);
 
-            assert_eq!(buffer, expected);
-        }
+        assert_eq!(buffer, expected);
     }
 }

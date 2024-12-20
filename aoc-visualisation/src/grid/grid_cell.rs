@@ -99,7 +99,7 @@ impl Widget for GridCell {
 }
 
 #[cfg(test)]
-mod grid_cell {
+mod test {
     use super::*;
 
     #[test]
@@ -116,6 +116,139 @@ mod grid_cell {
         "┌─┐",
         "│#│",
         "└─┘",
+            ]);
+
+        assert_eq!(buffer, expected);
+    }
+
+    #[test]
+    fn test_render_top_left() {
+        let value = "#";
+
+        let mut buffer = Buffer::empty(Rect::new(0, 0, 3, 3));
+
+        let grid_cell = GridCell::new(value.to_string(), GridCellEdge::TOP | GridCellEdge::LEFT);
+        grid_cell.render(buffer.area, &mut buffer);
+
+        #[rustfmt::skip]
+            let expected = Buffer::with_lines([
+        "┌──",
+        "│ #",
+        "│  ",
+            ]);
+
+        assert_eq!(buffer, expected);
+    }
+
+    #[test]
+    fn test_render_left() {
+        let value = "#";
+
+        let mut buffer = Buffer::empty(Rect::new(0, 0, 3, 3));
+
+        let grid_cell = GridCell::new(value.to_string(), GridCellEdge::LEFT);
+        grid_cell.render(buffer.area, &mut buffer);
+
+        #[rustfmt::skip]
+            let expected = Buffer::with_lines([
+        "├──",
+        "│ #",
+        "│  ",
+            ]);
+
+        assert_eq!(buffer, expected);
+    }
+
+    #[test]
+    fn test_render_bottom_left() {
+        let value = "#";
+
+        let mut buffer = Buffer::empty(Rect::new(0, 0, 3, 3));
+
+        let grid_cell = GridCell::new(value.to_string(), GridCellEdge::BOTTOM | GridCellEdge::LEFT);
+        grid_cell.render(buffer.area, &mut buffer);
+
+        #[rustfmt::skip]
+            let expected = Buffer::with_lines([
+        "├──",
+        "│ #",
+        "└──",
+            ]);
+
+        assert_eq!(buffer, expected);
+    }
+
+    #[test]
+    fn test_render_top_right() {
+        let value = "#";
+
+        let mut buffer = Buffer::empty(Rect::new(0, 0, 3, 3));
+
+        let grid_cell = GridCell::new(value.to_string(), GridCellEdge::TOP | GridCellEdge::RIGHT);
+        grid_cell.render(buffer.area, &mut buffer);
+
+        #[rustfmt::skip]
+            let expected = Buffer::with_lines([
+        "┬─┐",
+        "│#│",
+        "│ │",
+            ]);
+
+        assert_eq!(buffer, expected);
+    }
+
+    #[test]
+    fn test_render_right() {
+        let value = "#";
+
+        let mut buffer = Buffer::empty(Rect::new(0, 0, 3, 3));
+
+        let grid_cell = GridCell::new(value.to_string(), GridCellEdge::RIGHT);
+        grid_cell.render(buffer.area, &mut buffer);
+
+        #[rustfmt::skip]
+            let expected = Buffer::with_lines([
+        "┼─┤",
+        "│#│",
+        "│ │",
+            ]);
+
+        assert_eq!(buffer, expected);
+    }
+
+    #[test]
+    fn test_render_bottom_right() {
+        let value = "#";
+
+        let mut buffer = Buffer::empty(Rect::new(0, 0, 3, 3));
+
+        let grid_cell = GridCell::new(value.to_string(), GridCellEdge::BOTTOM | GridCellEdge::RIGHT);
+        grid_cell.render(buffer.area, &mut buffer);
+
+        #[rustfmt::skip]
+            let expected = Buffer::with_lines([
+        "┼─┤",
+        "│#│",
+        "┴─┘",
+            ]);
+
+        assert_eq!(buffer, expected);
+    }
+
+    #[test]
+    fn test_render_other() {
+        let value = "#";
+
+        let mut buffer = Buffer::empty(Rect::new(0, 0, 3, 3));
+
+        let grid_cell = GridCell::new(value.to_string(), GridCellEdge::empty());
+        grid_cell.render(buffer.area, &mut buffer);
+
+        #[rustfmt::skip]
+            let expected = Buffer::with_lines([
+        "┼──",
+        "│ #",
+        "│  ",
             ]);
 
         assert_eq!(buffer, expected);
