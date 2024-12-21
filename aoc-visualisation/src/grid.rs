@@ -31,8 +31,56 @@ impl GridVisualiser {
         self.style_map.insert(name, style);
     }
 
+
     pub fn draw<T>(&self, grid: ArrayView2<T>, area: Rect, buf: &mut Buffer)
     where
+        T: RatatuiStylised,
+        T: Display,
+    {
+        let row_constraint = Self::create_constraints(grid.nrows(), self.cell_row_size);
+
+        let rows = Layout::default()
+            .direction(ratatui::layout::Direction::Vertical)
+            .constraints(row_constraint)
+            .split(area);
+
+        for (row_idx, grid_row) in rows.iter().enumerate() {
+            let col_constraint = Self::create_constraints(grid.ncols(), self.cell_col_size);
+            let cols = Layout::default()
+                .direction(ratatui::layout::Direction::Horizontal)
+                .constraints(col_constraint)
+                .split(*grid_row);
+
+            for (col_idx, grid_col) in cols.iter().enumerate() {
+                let value = grid[[row_idx, col_idx]].to_string();
+
+                let grid_cell;
+
+                let mut edge: GridCellEdge = GridCellEdge::empty();
+                if row_idx == 0 {
+                    edge |= GridCellEdge::TOP;
+                } else if row_idx == grid.nrows() - 1 {
+                    edge |= GridCellEdge::BOTTOM;
+                }
+
+                if col_idx == 0 {
+                    edge |= GridCellEdge::LEFT;
+                } else if col_idx == grid.ncols() - 1 {
+                    edge |= GridCellEdge::RIGHT;
+                }
+
+                if let Some(s) = grid[[row_idx, col_idx]].get_style() {
+                    grid_cell = GridCell::with_style(value, s.clone(), edge);
+                } else {
+                    grid_cell = GridCell::new(value, edge);
+                }
+
+                grid_cell.render(*grid_col, buf);
+            }
+        }
+    }
+
+    pub fn draw_ref<T>(&self, grid: &ArrayView2<T>, area: Rect, buf: &mut Buffer) where
         T: RatatuiStylised,
         T: Display,
     {
