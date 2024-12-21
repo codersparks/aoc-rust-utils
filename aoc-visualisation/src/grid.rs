@@ -4,7 +4,7 @@ mod grid_config;
 use crate::grid::grid_cell::GridCell;
 use crate::grid::grid_config::GridCellEdge;
 use crate::traits::ratatui::RatatuiStylised;
-use ndarray::ArrayView2;
+use ndarray::{Array2, ArrayView2};
 use ratatui::buffer::Buffer;
 use ratatui::layout::{Layout, Rect};
 use ratatui::style::Style;
@@ -80,7 +80,7 @@ impl GridVisualiser {
         }
     }
 
-    pub fn draw_ref<T>(&self, grid: &ArrayView2<T>, area: Rect, buf: &mut Buffer) where
+    pub fn draw_ref<T>(&self, grid: &Array2<T>, area: Rect, buf: &mut Buffer) where
         T: RatatuiStylised,
         T: Display,
     {
