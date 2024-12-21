@@ -84,6 +84,7 @@ impl GridVisualiser {
         T: RatatuiStylised,
         T: Display,
     {
+        let grid = grid.view();
         let row_constraint = Self::create_constraints(grid.nrows(), self.cell_row_size);
 
         let rows = Layout::default()
