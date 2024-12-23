@@ -12,9 +12,10 @@ use ratatui::buffer::Buffer;
 use ratatui::layout::{Layout, Rect};
 use ratatui::style::Style;
 use ratatui::widgets::Widget;
-use ratatui::Terminal;
+use ratatui::{CompletedFrame, Terminal};
 use std::collections::HashMap;
 use std::fmt::Display;
+use std::io;
 
 pub struct GridVisualiser<'a, T>
 where
@@ -154,56 +155,59 @@ impl<'a, T: Backend> GridVisualiser<'a, T> {
     // }
     //
 
-    pub fn draw_ref<C>(&self, grid: &ArrayView2<C>, area: Rect, buf: &mut Buffer)
+    pub fn draw_ref<C>(&mut self, grid: &ArrayView2<C>) -> io::Result<CompletedFrame>
     where
         C: RatatuiStylised,
         C: Display,
     {
+        self.terminal.draw(|f| {
+            let area = f.area();
+            let buf = f.buffer_mut();
+            let (cell_content_row_size, cell_content_col_size) = C::get_cell_content_max_dimensions();
+            let row_constraint = Self::create_constraints(grid.nrows(), cell_content_row_size);
+            let col_constraint = Self::create_constraints(grid.ncols(), cell_content_col_size);
 
-        let (cell_content_row_size, cell_content_col_size) = C::get_cell_content_max_dimensions();
-        let row_constraint = Self::create_constraints(grid.nrows(), cell_content_row_size);
-        let col_constraint = Self::create_constraints(grid.ncols(), cell_content_col_size);
+            let rows = Layout::default()
+                .direction(ratatui::layout::Direction::Vertical)
+                .constraints(row_constraint)
+                .split(area);
 
-        let rows = Layout::default()
-            .direction(ratatui::layout::Direction::Vertical)
-            .constraints(row_constraint)
-            .split(area);
+            for (row_idx, grid_row) in rows.iter().enumerate() {
+                let cols = Layout::default()
+                    .direction(ratatui::layout::Direction::Horizontal)
+                    .constraints(col_constraint.clone())
+                    .split(*grid_row);
 
-        for (row_idx, grid_row) in rows.iter().enumerate() {
-            let cols = Layout::default()
-                .direction(ratatui::layout::Direction::Horizontal)
-                .constraints(col_constraint.clone())
-                .split(*grid_row);
+                for (col_idx, grid_col) in cols.iter().enumerate() {
+                    let value = grid[[row_idx, col_idx]].to_string();
 
-            for (col_idx, grid_col) in cols.iter().enumerate() {
-                let value = grid[[row_idx, col_idx]].to_string();
+                    let grid_cell;
 
-                let grid_cell;
+                    let mut edge: GridCellEdge = GridCellEdge::empty();
+                    if row_idx == 0 {
+                        edge |= GridCellEdge::TOP;
+                    }
+                    if row_idx == grid.nrows() - 1 {
+                        edge |= GridCellEdge::BOTTOM;
+                    }
 
-                let mut edge: GridCellEdge = GridCellEdge::empty();
-                if row_idx == 0 {
-                    edge |= GridCellEdge::TOP;
+                    if col_idx == 0 {
+                        edge |= GridCellEdge::LEFT;
+                    }
+                    if col_idx == grid.ncols() - 1 {
+                        edge |= GridCellEdge::RIGHT;
+                    }
+
+                    if let Some(s) = grid[[row_idx, col_idx]].get_style() {
+                        grid_cell = GridCell::with_style(value, s.clone(), edge);
+                    } else {
+                        grid_cell = GridCell::new(value, edge);
+                    }
+
+                    grid_cell.render(*grid_col, buf);
                 }
-                if row_idx == grid.nrows() - 1 {
-                    edge |= GridCellEdge::BOTTOM;
-                }
-
-                if col_idx == 0 {
-                    edge |= GridCellEdge::LEFT;
-                }
-                if col_idx == grid.ncols() - 1 {
-                    edge |= GridCellEdge::RIGHT;
-                }
-
-                if let Some(s) = grid[[row_idx, col_idx]].get_style() {
-                    grid_cell = GridCell::with_style(value, s.clone(), edge);
-                } else {
-                    grid_cell = GridCell::new(value, edge);
-                }
-
-                grid_cell.render(*grid_col, buf);
             }
-        }
+        })
     }
 
     fn create_constraints(n: usize, cell_size: usize) -> Vec<ratatui::layout::Constraint> {
@@ -265,13 +269,15 @@ mod tests {
         let grid_view = grid.view();
 
         let mut terminal = Terminal::new(TestBackend::new(5, 5)).unwrap();
-        let frame_area = terminal.get_frame().area();
-        let visualiser = GridVisualiser::new(&mut terminal);
+
+        let mut visualiser = GridVisualiser::new(&mut terminal);
 
 
-        let mut buffer = Buffer::empty(frame_area);
 
-        visualiser.draw_ref(&grid_view, frame_area, &mut buffer);
+
+        let result = visualiser.draw_ref(&grid_view);
+
+        assert!(result.is_ok());
 
         // Validate buffer contents
         #[rustfmt::skip]
@@ -283,7 +289,7 @@ mod tests {
             "└─┴─┘",
         ]);
 
-        assert_eq!(buffer, expected);
+        terminal.backend().assert_buffer(&expected);
     }
 
     #[test]
@@ -295,13 +301,13 @@ mod tests {
 
         let grid_view = grid.view();
 
-        let mut terminal = Terminal::new(TestBackend::new(5, 5)).unwrap();
-        let frame_area = terminal.get_frame().area();
-        let visualiser = GridVisualiser::new(&mut terminal);
+        let test_backend = TestBackend::new(5, 5);
+        let mut terminal = Terminal::new(test_backend).unwrap();
+        let mut visualiser = GridVisualiser::new(&mut terminal);
 
-        let mut buffer = Buffer::empty(frame_area);
 
-        visualiser.draw_ref(&grid_view, frame_area, &mut buffer);
+        let result = visualiser.draw_ref(&grid_view);
+        assert!(result.is_ok());
 
         // Validate buffer contents
         #[rustfmt::skip]
@@ -315,7 +321,8 @@ mod tests {
         // Validate that the '#' item got a red background
         expected.set_style(Rect::new(3, 1, 1, 1), Style::default().bg(Color::Red));
 
-        assert_eq!(buffer, expected);
+        terminal.backend_mut().assert_buffer(&expected);
+
     }
 
     #[test]
@@ -329,13 +336,11 @@ mod tests {
         let grid_view = grid.slice(s![.., 1..]);
 
         let mut terminal = Terminal::new(TestBackend::new(3, 5)).unwrap();
-        let frame_area = terminal.get_frame().area();
-        let visualiser = GridVisualiser::new(&mut terminal);
+        let mut visualiser = GridVisualiser::new(&mut terminal);
 
 
-        let mut buffer = Buffer::empty(frame_area);
-
-        visualiser.draw_ref(&grid_view, frame_area, &mut buffer);
+        let result = visualiser.draw_ref(&grid_view);
+        assert!(result.is_ok());
 
         // Validate buffer contents
         #[rustfmt::skip]
@@ -347,7 +352,7 @@ mod tests {
             "└─┘",
         ]);
 
-        assert_eq!(buffer, expected);
+        terminal.backend_mut().assert_buffer(&expected);
     }
 
     #[test]
