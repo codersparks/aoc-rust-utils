@@ -1,6 +1,6 @@
 mod grid_cell;
 mod grid_config;
-mod grid_utils;
+pub mod grid_utils;
 
 use crate::grid::grid_cell::GridCell;
 use crate::grid::grid_config::GridCellEdge;
