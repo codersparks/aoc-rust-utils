@@ -11,7 +11,7 @@ use ratatui::backend::Backend;
 use ratatui::buffer::Buffer;
 use ratatui::layout::{Layout, Rect};
 use ratatui::style::Style;
-use ratatui::widgets::{Clear, Widget};
+use ratatui::widgets::Widget;
 use ratatui::{CompletedFrame, Terminal};
 use std::collections::HashMap;
 use std::fmt::Display;
@@ -164,8 +164,6 @@ impl<'a, T: Backend> GridVisualiser<'a, T> {
             let area = f.area();
             let buf = f.buffer_mut();
 
-            f.render_widget(Clear, area);
-
             let (cell_content_row_size, cell_content_col_size) = C::get_cell_content_max_dimensions();
             let row_constraint = Self::create_constraints(grid.nrows(), cell_content_row_size);
             let col_constraint = Self::create_constraints(grid.ncols(), cell_content_col_size);
@@ -231,10 +229,10 @@ mod tests {
     use super::*;
     use ndarray::{array, s};
 
-    use ratatui::style::Color;
-    use std::fmt::Formatter;
     use ratatui::backend::TestBackend;
     use ratatui::layout::Constraint;
+    use ratatui::style::Color;
+    use std::fmt::Formatter;
 
     struct TestGridItem {
         value: char,
