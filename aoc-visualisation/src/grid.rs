@@ -16,6 +16,7 @@ use ratatui::{CompletedFrame, Terminal};
 use std::collections::HashMap;
 use std::fmt::Display;
 use std::io;
+use tracing::debug;
 
 pub struct GridVisualiser<'a, T>
 where
@@ -165,8 +166,11 @@ impl<'a, T: Backend> GridVisualiser<'a, T> {
             let buf = f.buffer_mut();
 
             let (cell_content_row_size, cell_content_col_size) = C::get_cell_content_max_dimensions();
+            debug!("Cell content row size: {}, col size: {}", cell_content_row_size, cell_content_col_size);
             let row_constraint = Self::create_constraints(grid.nrows(), cell_content_row_size);
             let col_constraint = Self::create_constraints(grid.ncols(), cell_content_col_size);
+            debug!("Row constraint: {:?}", row_constraint);
+            debug!("Col constraint: {:?}", col_constraint);
 
             let rows = Layout::default()
                 .direction(ratatui::layout::Direction::Vertical)
