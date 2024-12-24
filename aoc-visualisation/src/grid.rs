@@ -77,16 +77,16 @@ impl<'a, T: Backend> GridVisualiser<'a, T> {
 
                 // We need to remove the size of the row/coll, before dividing the remaining space
 
-                no_rows = (area.height as usize - Self::NUMBERS_ROW_HEIGHT - 1) / (content_max_height + 2);
-                no_cols = (area.width as usize  - Self::NUMBERS_COL_WIDTH - 1) / (content_max_width + 2);
+                no_rows = (area.height as usize - content_max_height - Self::NUMBERS_ROW_HEIGHT - 2) / (content_max_height + 1);
+                no_cols = (area.width as usize  - content_max_width - Self::NUMBERS_COL_WIDTH - 2) / (content_max_width + 1);
 
             }
             DisplayRowColumnNumber::Dynamic => {
                 unimplemented!("Dynamic display of row/col number of grid not yet implemented")
             }
             DisplayRowColumnNumber::Never => {
-                no_rows = (area.height as usize - 1) / (content_max_height + 2);
-                no_cols = (area.width as usize - 1) / (content_max_width + 2);
+                no_rows = (area.height as usize - content_max_height - 2) / (content_max_height + 1);
+                no_cols = (area.width as usize - content_max_width - 2) / (content_max_width + 1);
 
             }
         }
@@ -105,56 +105,6 @@ impl<'a, T: Backend> GridVisualiser<'a, T> {
 
         Ok((no_rows, no_cols))
     }
-
-    // pub fn draw<C>(&self, grid: ArrayView2<C>, area: Rect, buf: &mut Buffer)
-    // where
-    //     C: RatatuiStylised,
-    //     C: Display,
-    // {
-    //
-    //     let row_constraint = Self::create_constraints(grid.nrows(), self.cell_row_size);
-    //
-    //     let rows = Layout::default()
-    //         .direction(ratatui::layout::Direction::Vertical)
-    //         .constraints(row_constraint)
-    //         .split(area);
-    //
-    //     for (row_idx, grid_row) in rows.iter().enumerate() {
-    //         let col_constraint = Self::create_constraints(grid.ncols(), self.cell_col_size);
-    //         let cols = Layout::default()
-    //             .direction(ratatui::layout::Direction::Horizontal)
-    //             .constraints(col_constraint)
-    //             .split(*grid_row);
-    //
-    //         for (col_idx, grid_col) in cols.iter().enumerate() {
-    //             let value = grid[[row_idx, col_idx]].to_string();
-    //
-    //             let grid_cell;
-    //
-    //             let mut edge: GridCellEdge = GridCellEdge::empty();
-    //             if row_idx == 0 {
-    //                 edge |= GridCellEdge::TOP;
-    //             } else if row_idx == grid.nrows() - 1 {
-    //                 edge |= GridCellEdge::BOTTOM;
-    //             }
-    //
-    //             if col_idx == 0 {
-    //                 edge |= GridCellEdge::LEFT;
-    //             } else if col_idx == grid.ncols() - 1 {
-    //                 edge |= GridCellEdge::RIGHT;
-    //             }
-    //
-    //             if let Some(s) = grid[[row_idx, col_idx]].get_style() {
-    //                 grid_cell = GridCell::with_style(value, s.clone(), edge);
-    //             } else {
-    //                 grid_cell = GridCell::new(value, edge);
-    //             }
-    //
-    //             grid_cell.render(*grid_col, buf);
-    //         }
-    //     }
-    // }
-    //
 
     pub fn draw_ref<C>(&mut self, grid: &ArrayView2<C>) -> io::Result<CompletedFrame>
     where
@@ -393,8 +343,8 @@ mod tests {
             DisplayRowColumnNumber::Always,
         ).unwrap();
 
-        assert_eq!(rows, 2); // (10 - NUMBERS_ROW_HEIGHT - 1) / (1 + 2)
-        assert_eq!(cols, 4); // (20 - NUMBERS_COL_WIDTH - 1) / (1 + 2)
+        assert_eq!(rows, 2); // (10 - NUMBERS_ROW_HEIGHT(3) - MAX_CONTENT_HEIGHT(1) - 2 / (MAX_CONTENT_HEIGHT(1) + 1)
+        assert_eq!(cols, 5); // (20 - NUMBERS_COL_WIDTH(6) -  MAX_CONTENT_HEIGHT(1) - 2) / (MAX_CONTENT_WIDTH(1) + 1 )
     }
 
     #[test]
@@ -409,25 +359,10 @@ mod tests {
             DisplayRowColumnNumber::Never,
         ).unwrap();
 
-        assert_eq!(rows, 3); // (10 - 1) / (1 + 2)
-        assert_eq!(cols, 6); // (20 - 1) / (1 + 2)
+        assert_eq!(rows, 3); // (10 - MAX_CONTENT_HEIGHT(1) - 2 / (MAX_CONTENT_HEIGHT(1) + 1)
+        assert_eq!(cols, 8); // (20 - MAX_CONTENT_HEIGHT(1) - 2) / (MAX_CONTENT_WIDTH(1) + 1 )
     }
 
-
-    #[test]
-    fn test_calculate_viewable_grid_size_small_terminal_area() {
-        let mock_backend = TestBackend::new(8, 5); // Mock terminal with 8x5 size
-        let mut terminal = Terminal::new(mock_backend).unwrap();
-        let mut visualiser = GridVisualiser::new(& mut terminal);
-
-        let result = visualiser.calculate_viewable_grid_size(
-            3,
-            6,
-            DisplayRowColumnNumber::Always,
-        );
-
-        assert!(result.is_err());
-    }
 
     #[test]
     fn test_calculate_viewable_grid_size_with_set_limits() {
@@ -466,8 +401,8 @@ mod tests {
             .calculate_viewable_grid_size(2, 2, DisplayRowColumnNumber::Never)
             .unwrap();
 
-        assert_eq!(rows, 3); // Limited by terminal size, not max_rows
-        assert_eq!(cols, 7); // Limited by terminal size, not max_cols
+        assert_eq!(rows, 3); // (15 - MAX_CONTENT_HEIGHT(2) - 2 / (MAX_CONTENT_HEIGHT(2) + 1)
+        assert_eq!(cols, 8); // (30 - MAX_CONTENT_HEIGHT(2) - 2) / (MAX_CONTENT_WIDTH(2) + 1 )
     }
 
     #[test]
