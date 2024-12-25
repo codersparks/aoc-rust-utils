@@ -65,38 +65,25 @@ impl<'a, T: Backend> GridVisualiser<'a, T> {
         content_max_width: usize,
         show_identifiers: DisplayRowColumnNumber,
     ) -> Result<(usize, usize), String> {
-
-
         let area = self.terminal.get_frame().area();
+        let (mut no_rows, mut no_cols) = match show_identifiers {
+            DisplayRowColumnNumber::Always => (
+                (area.height as usize - content_max_height - Self::NUMBERS_ROW_HEIGHT - 2)
+                    / (content_max_height + 1),
+                (area.width as usize - content_max_width - Self::NUMBERS_COL_WIDTH - 2)
+                    / (content_max_width + 1),
+            ),
+            DisplayRowColumnNumber::Never => (
+                (area.height as usize - content_max_height - 2) / (content_max_height + 1),
+                (area.width as usize - content_max_width - 2) / (content_max_width + 1),
+            ),
+        };
 
-        let mut no_rows:usize;
-        let mut no_cols:usize;
-
-        match show_identifiers {
-            DisplayRowColumnNumber::Always => {
-
-                // We need to remove the size of the row/coll, before dividing the remaining space
-
-                no_rows = (area.height as usize - content_max_height - Self::NUMBERS_ROW_HEIGHT - 2) / (content_max_height + 1);
-                no_cols = (area.width as usize  - content_max_width - Self::NUMBERS_COL_WIDTH - 2) / (content_max_width + 1);
-
-            }
-            DisplayRowColumnNumber::Dynamic => {
-                unimplemented!("Dynamic display of row/col number of grid not yet implemented")
-            }
-            DisplayRowColumnNumber::Never => {
-                no_rows = (area.height as usize - content_max_height - 2) / (content_max_height + 1);
-                no_cols = (area.width as usize - content_max_width - 2) / (content_max_width + 1);
-
-            }
+        if let Some(max_rows) = self.max_rows {
+            no_rows = no_rows.min(max_rows);
         }
-
-        if self.max_rows.is_some() && no_rows > self.max_rows.unwrap() {
-            no_rows = self.max_rows.unwrap();
-        }
-
-        if self.max_cols.is_some() && no_cols > self.max_cols.unwrap() {
-            no_cols = self.max_cols.unwrap();
+        if let Some(max_cols) = self.max_cols {
+            no_cols = no_cols.min(max_cols);
         }
 
         if no_rows == 0 || no_cols == 0 {
